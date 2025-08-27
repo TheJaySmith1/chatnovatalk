@@ -53,8 +53,13 @@ declare global {
 
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+interface UseVoiceProps {
+    onInterimTranscript?: (transcript: string) => void;
+    onFinalTranscript?: (transcript: string) => void;
+}
 
-export const useVoice = (onTranscript: (transcript: string) => void) => {
+export const useVoice = ({ onInterimTranscript, onFinalTranscript }: UseVoiceProps) => {
   const [isListening, setIsListening] = useState(false);
   // FIX: Use the correctly defined SpeechRecognition interface.
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -73,13 +78,19 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let finalTranscript = '';
+      let interimTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
         }
       }
-      if (finalTranscript) {
-        onTranscript(finalTranscript);
+      if (onInterimTranscript && interimTranscript) {
+        onInterimTranscript(interimTranscript);
+      }
+      if (onFinalTranscript && finalTranscript) {
+        onFinalTranscript(finalTranscript);
       }
     };
     
@@ -95,7 +106,7 @@ export const useVoice = (onTranscript: (transcript: string) => void) => {
     };
 
     recognitionRef.current = recognition;
-  }, [onTranscript]);
+  }, [onInterimTranscript, onFinalTranscript]);
 
   const startListening = useCallback(() => {
     if (recognitionRef.current && !isListening) {

@@ -9,14 +9,16 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Header from './components/Header';
 import ChatWindow from './components/ChatWindow';
 import InputBar from './components/InputBar';
+import CallView from './components/CallView';
 
 const App: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [isCallActive, setIsCallActive] = useState(false);
 
-  const { isListening, startListening, stopListening } = useVoice(setTranscript);
+  const { isListening, startListening, stopListening } = useVoice({ onInterimTranscript: setTranscript });
 
   useEffect(() => {
     if (authLoading) return; // Wait for auth state to be determined
@@ -53,12 +55,14 @@ const App: React.FC = () => {
     }
   }, [user, authLoading]);
 
-  const handleSendMessage = async (content: string) => {
-    if (isLoading || !user) return;
+  const handleSendMessage = async (content: string, messageHistory: Message[] = messages): Promise<Message> => {
+    if (isLoading || !user) {
+        throw new Error("Cannot send message, user not logged in or app is busy.");
+    };
 
     const userMessage: Message = { id: crypto.randomUUID(), role: Role.USER, content };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
+    const updatedMessages = [...messageHistory, userMessage];
+    setMessages(updatedMessages); // Update main chat view immediately
     setIsLoading(true);
 
     try {
@@ -77,8 +81,7 @@ const App: React.FC = () => {
           imageUrl,
         };
       } else {
-        const history = updatedMessages;
-        const aiResponse = await fetchChatCompletion(history);
+        const aiResponse = await fetchChatCompletion(updatedMessages);
         assistantMessage = {
           id: crypto.randomUUID(),
           role: Role.ASSISTANT,
@@ -93,6 +96,8 @@ const App: React.FC = () => {
       const chatDocRef = doc(db, 'chats', user.uid);
       await setDoc(chatDocRef, { messages: finalMessages, updatedAt: serverTimestamp() }, { merge: true });
 
+      return assistantMessage;
+
     } catch (error) {
       console.error(error);
       const errorMessage: Message = {
@@ -101,11 +106,28 @@ const App: React.FC = () => {
         content: "I'm sorry, I encountered an error. Please try again.",
       };
       setMessages(prev => [...prev, errorMessage]);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
   
+  const handleStartCall = () => {
+    if (user) {
+      setIsCallActive(true);
+    }
+  };
+
+  const handleEndCall = async (callHistory: Message[]) => {
+     setIsCallActive(false);
+     if (user && callHistory.length > 1) { // Only save if there's more than the initial greeting
+        const finalMessages = [...messages, ...callHistory.slice(1)]; // Exclude initial greeting from AI
+        setMessages(finalMessages);
+        const chatDocRef = doc(db, 'chats', user.uid);
+        await setDoc(chatDocRef, { messages: finalMessages, updatedAt: serverTimestamp() }, { merge: true });
+     }
+  };
+
   if (authLoading) {
     return (
        <div className="min-h-screen w-screen flex items-center justify-center font-sans text-white">
@@ -126,8 +148,24 @@ const App: React.FC = () => {
           stopListening={stopListening}
           transcript={transcript}
           disabled={!user}
+          onStartCall={handleStartCall}
         />
       </main>
+      {isCallActive && user && (
+        <CallView 
+          user={user} 
+          onEndCall={handleEndCall}
+          getAiResponse={async (history) => {
+             const aiResponse = await fetchChatCompletion(history);
+             return {
+                id: crypto.randomUUID(),
+                role: Role.ASSISTANT,
+                content: aiResponse,
+             } as Message;
+          }}
+          initialMessages={messages}
+        />
+      )}
     </div>
   );
 };
