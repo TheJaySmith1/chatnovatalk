@@ -80,7 +80,7 @@ const App: React.FC = () => {
         assistantMessage = {
           id: crypto.randomUUID(),
           role: Role.ASSISTANT,
-          content: "Here is a simulated image for you.",
+          content: "Here is the image you requested.",
           imageUrl,
         };
       } else {
@@ -102,7 +102,7 @@ const App: React.FC = () => {
       const errorMessage: Message = {
         id: crypto.randomUUID(),
         role: Role.ASSISTANT,
-        content: "I'm sorry, I encountered a simulated error. Please try again.",
+        content: "I'm sorry, an error occurred. Please check the console for details.",
       };
       // Use the saveMessages function to correctly update state and local storage
       saveMessages([...updatedMessages, errorMessage]);
