@@ -15,19 +15,6 @@ const mockUser: UserProfile = {
   photoURL: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2FlYWViMiI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYybDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==',
 };
 
-// Check if the API key is available. This is the definitive fix for the blank screen issue.
-const isApiKeyConfigured = process.env.API_KEY && process.env.API_KEY.length > 0;
-
-const ApiKeyErrorScreen: React.FC = () => (
-  <div className="min-h-screen w-screen flex flex-col items-center justify-center font-sans text-white p-4 text-center">
-    <div className="max-w-md bg-gray-800/50 backdrop-blur-lg border border-red-500/50 rounded-2xl p-8">
-       <h1 className="text-2xl font-bold text-red-400 mb-4">Configuration Error</h1>
-       <p className="text-gray-300 mb-2">The Gemini API key is missing.</p>
-       <p className="text-gray-400 text-sm">To fix this, please set the `API_KEY` environment variable in your deployment settings (e.g., on Netlify or Vercel) and redeploy the application.</p>
-    </div>
-  </div>
-);
-
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,7 +80,7 @@ const App: React.FC = () => {
         assistantMessage = {
           id: crypto.randomUUID(),
           role: Role.ASSISTANT,
-          content: "Here is the image you requested.",
+          content: "Here is a simulated image for you.",
           imageUrl,
         };
       } else {
@@ -115,7 +102,7 @@ const App: React.FC = () => {
       const errorMessage: Message = {
         id: crypto.randomUUID(),
         role: Role.ASSISTANT,
-        content: "I'm sorry, I encountered an error. Please try again.",
+        content: "I'm sorry, I encountered a simulated error. Please try again.",
       };
       // Use the saveMessages function to correctly update state and local storage
       saveMessages([...updatedMessages, errorMessage]);
@@ -136,11 +123,6 @@ const App: React.FC = () => {
         saveMessages(finalMessages);
      }
   };
-  
-  // Conditionally render the app or an error screen.
-  if (!isApiKeyConfigured) {
-    return <ApiKeyErrorScreen />;
-  }
 
   return (
     <div className="min-h-screen w-screen flex flex-col">
