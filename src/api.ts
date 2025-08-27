@@ -1,29 +1,48 @@
 import { GoogleGenAI, Content } from "@google/genai";
 import { Message, Role } from './types';
 
-// The API key is sourced from the environment variable `process.env.API_KEY`
-// and is assumed to be available in the execution environment.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+let ai: GoogleGenAI | null = null;
+
+/**
+ * Lazily initializes and returns the GoogleGenAI client.
+ * This prevents the app from crashing on startup if the API key is missing.
+ */
+function getAiClient(): GoogleGenAI {
+  if (ai) {
+    return ai;
+  }
+
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    // This error will be caught by the calling function and handled gracefully.
+    throw new Error("Gemini API key is not configured. Please set the API_KEY environment variable.");
+  }
+
+  ai = new GoogleGenAI({ apiKey });
+  return ai;
+}
+
 
 /**
  * Generates a chat response from the Gemini API using the entire conversation history.
  */
 export async function fetchChatCompletion(messages: Message[]): Promise<string> {
-  const modelName = 'gemini-2.5-flash';
-
-  if (messages.length === 0) {
-    return "I'm sorry, there was no message to process.";
-  }
-
-  // Convert the entire message history to Gemini's format.
-  // 'assistant' role is mapped to 'model'.
-  const contents: Content[] = messages.map(msg => ({
-    role: msg.role === Role.USER ? 'user' : 'model',
-    parts: [{ text: msg.content }]
-  }));
-
   try {
-    const response = await ai.models.generateContent({
+    const client = getAiClient();
+    const modelName = 'gemini-2.5-flash';
+
+    if (messages.length === 0) {
+      return "I'm sorry, there was no message to process.";
+    }
+
+    // Convert the entire message history to Gemini's format.
+    // 'assistant' role is mapped to 'model'.
+    const contents: Content[] = messages.map(msg => ({
+      role: msg.role === Role.USER ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
+
+    const response = await client.models.generateContent({
       model: modelName,
       contents: contents,
     });
@@ -40,7 +59,8 @@ export async function fetchChatCompletion(messages: Message[]): Promise<string> 
  */
 export async function fetchGeneratedImage(prompt: string): Promise<string> {
   try {
-    const response = await ai.models.generateImages({
+    const client = getAiClient();
+    const response = await client.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt: prompt,
         config: {
