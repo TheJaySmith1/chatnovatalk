@@ -2,9 +2,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { Message, Role } from './types';
 
-// FIX: Use process.env.API_KEY as per coding guidelines.
+// FIX: Initialize GoogleGenAI client using API_KEY from environment variables.
 // The API key is sourced from the environment variable `process.env.API_KEY`
-// and is made available during the build process via Vite configuration.
+// and is assumed to be available in the execution environment.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 // FIX: Refactor to use Gemini API for chat completions.
