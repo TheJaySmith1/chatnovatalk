@@ -1,0 +1,7 @@
+{
+  "name": "NovaTalk",
+  "description": "A chatbot interface inspired by Apple's Liquid Glass design, featuring text, voice, and image generation capabilities with a translucent, prismatic, and glossy UI.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
