@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// FIX: Add comprehensive type definitions for the Web Speech API to resolve TypeScript errors.
 interface SpeechRecognitionAlternative {
   readonly transcript: string;
   readonly confidence: number;
@@ -51,7 +50,7 @@ declare global {
   }
 }
 
-const SpeechRecognition =
+const SpeechRecognitionAPI =
   window.SpeechRecognition || window.webkitSpeechRecognition;
   
 interface UseVoiceProps {
@@ -61,51 +60,51 @@ interface UseVoiceProps {
 
 export const useVoice = ({ onInterimTranscript, onFinalTranscript }: UseVoiceProps) => {
   const [isListening, setIsListening] = useState(false);
-  // FIX: Use the correctly defined SpeechRecognition interface.
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
-    if (!SpeechRecognition) {
+    if (!SpeechRecognitionAPI) {
       console.warn('Speech recognition not supported in this browser.');
       return;
     }
 
-    // FIX: Remove incorrect type assertion.
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    try {
+      const recognition = new SpeechRecognitionAPI();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalTranscript = '';
-      let interimTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
         }
-      }
-      if (onInterimTranscript && interimTranscript) {
-        onInterimTranscript(interimTranscript);
-      }
-      if (onFinalTranscript && finalTranscript) {
-        onFinalTranscript(finalTranscript);
-      }
-    };
-    
-    recognition.onend = () => {
-      // If the service disconnects, we might want to automatically restart
-      // but for this UI, manual control via the button is better.
-      setIsListening(false);
-    };
-
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        console.error('Speech recognition error:', event.error);
+        if (onInterimTranscript && interimTranscript) {
+          onInterimTranscript(interimTranscript);
+        }
+        if (onFinalTranscript && finalTranscript) {
+          onFinalTranscript(finalTranscript);
+        }
+      };
+      
+      recognition.onend = () => {
         setIsListening(false);
-    };
+      };
 
-    recognitionRef.current = recognition;
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    } catch (error) {
+        console.error("Failed to initialize SpeechRecognition:", error);
+    }
   }, [onInterimTranscript, onFinalTranscript]);
 
   const startListening = useCallback(() => {

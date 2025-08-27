@@ -1,34 +1,41 @@
 import React from 'react';
-// FIX: Use inline `type` modifier for `Message` as it is a type-only import.
 import { type Message, Role } from '../types';
+import LoadingIndicator from './LoadingIndicator';
 
 interface Props {
   message: Message;
+  isLoading?: boolean;
 }
 
-const MessageBubble: React.FC<Props> = ({ message }) => {
+const MessageBubble: React.FC<Props> = ({ message, isLoading }) => {
   const isUser = message.role === Role.USER;
 
   const bubbleClasses = isUser
-    ? 'bg-white/20 backdrop-blur-lg border border-white/25 self-end text-white'
-    : 'bg-white/10 backdrop-blur-lg border border-white/20 self-start text-white/90';
+    ? 'bg-blue-600 text-white rounded-br-lg'
+    : 'bg-[#373739] text-gray-200 rounded-bl-lg';
 
   return (
     <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-lg lg:max-w-xl p-4 rounded-2xl shadow-md my-2 flex flex-col ${bubbleClasses}`}
+        className={`max-w-md lg:max-w-lg p-3 rounded-2xl flex flex-col ${bubbleClasses}`}
         role="log"
         aria-live={isUser ? "off" : "polite"}
       >
-        <p className="whitespace-pre-wrap">{message.content}</p>
-        {message.imageUrl && (
-          <div className="mt-4 rounded-xl overflow-hidden border border-white/20">
-            <img 
-              src={message.imageUrl} 
-              alt="AI generated image" 
-              className="w-full h-auto object-cover" 
-            />
-          </div>
+        {isLoading ? (
+          <LoadingIndicator />
+        ) : (
+          <>
+            <p className="whitespace-pre-wrap">{message.content}</p>
+            {message.imageUrl && (
+              <div className="mt-2 rounded-lg overflow-hidden border border-white/10">
+                <img 
+                  src={message.imageUrl} 
+                  alt="AI generated" 
+                  className="w-full h-auto object-cover" 
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

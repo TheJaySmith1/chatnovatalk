@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-// FIX: Use `import type` because `Message` is only used as a type annotation.
 import type { Message } from '../types';
 import MessageBubble from './MessageBubble';
 import LoadingIndicator from './LoadingIndicator';
+import { Role } from '../types';
 
 interface Props {
   messages: Message[];
@@ -18,7 +18,7 @@ const ChatWindow: React.FC<Props> = ({ messages, isLoading }) => {
 
   return (
     <div
-      className="p-4 space-y-4"
+      className="p-4 space-y-2"
       aria-live="polite"
       aria-atomic="false"
     >
@@ -26,11 +26,7 @@ const ChatWindow: React.FC<Props> = ({ messages, isLoading }) => {
         <MessageBubble key={msg.id} message={msg} />
       ))}
       {isLoading && (
-         <div className="flex w-full justify-start">
-            <div className="max-w-lg lg:max-w-xl p-4 rounded-2xl shadow-md my-2 flex items-center bg-white/10 backdrop-blur-lg border border-white/20 self-start text-white/90">
-              <LoadingIndicator />
-            </div>
-         </div>
+         <MessageBubble message={{ id: 'loading', role: Role.ASSISTANT, content: ''}} isLoading={true} />
       )}
       <div ref={endOfMessagesRef} />
     </div>

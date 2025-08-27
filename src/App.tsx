@@ -12,8 +12,21 @@ const LOCAL_STORAGE_KEY = 'novatalk_messages';
 
 const mockUser: UserProfile = {
   displayName: 'You',
-  photoURL: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAxMmMyLjIxIDAgNC0xLjc5IDQtNHMtMS43OS00LTQtNC00IDEuNzktNCA0IDEuNzkgNCA0IDR6bTAgMmMtMi42NyAwLTggMS4zNC04IDR2MmwxNnYtMmMwLTIuNjYtNS4zMy00LTgtNHoiLz48L3N2Zz4=',
+  photoURL: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2FlYWViMiI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYybDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==',
 };
+
+// Check if the API key is available. This is the definitive fix for the blank screen issue.
+const isApiKeyConfigured = process.env.API_KEY && process.env.API_KEY.length > 0;
+
+const ApiKeyErrorScreen: React.FC = () => (
+  <div className="min-h-screen w-screen flex flex-col items-center justify-center font-sans text-white p-4 text-center">
+    <div className="max-w-md bg-gray-800/50 backdrop-blur-lg border border-red-500/50 rounded-2xl p-8">
+       <h1 className="text-2xl font-bold text-red-400 mb-4">Configuration Error</h1>
+       <p className="text-gray-300 mb-2">The Gemini API key is missing.</p>
+       <p className="text-gray-400 text-sm">To fix this, please set the `API_KEY` environment variable in your deployment settings (e.g., on Netlify or Vercel) and redeploy the application.</p>
+    </div>
+  </div>
+);
 
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -123,11 +136,16 @@ const App: React.FC = () => {
         saveMessages(finalMessages);
      }
   };
+  
+  // Conditionally render the app or an error screen.
+  if (!isApiKeyConfigured) {
+    return <ApiKeyErrorScreen />;
+  }
 
   return (
-    <div className="min-h-screen w-screen flex flex-col font-sans text-white">
+    <div className="min-h-screen w-screen flex flex-col">
       <Header />
-      <main className="flex-1 flex flex-col pt-24 pb-4 w-full max-w-4xl mx-auto">
+      <main className="flex-1 flex flex-col pt-24 pb-4 w-full max-w-3xl mx-auto px-4">
         <ChatWindow messages={messages} isLoading={isLoading} />
         <InputBar 
           onSendMessage={handleSendMessage}
