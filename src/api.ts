@@ -32,7 +32,7 @@ export async function fetchChatCompletion(messages: Message[]): Promise<string> 
     });
 
     const result = await chat.sendMessage({ message: lastMessage.content });
-    // Extract text directly from the response object as per guidelines, providing a fallback.
+    // FIX: Extract text directly from the response object as per guidelines, providing a fallback for undefined.
     return result.text ?? 'Sorry, I could not process that.';
   } catch (error) {
     console.error('Gemini API Error:', error);
