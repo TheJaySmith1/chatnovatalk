@@ -1,4 +1,4 @@
-import { Message, Role } from './types';
+import { type Message } from './types';
 
 const API_KEY = 'sk-voidai-HhAaP6NWhsfIe3hJIF8uTpm90OUCtSgE5A5H32ycmUl3xmOOno5o8Uz0M0AMgAwizt5dEV99ktHoM3AfdGjpiZZo7VrMxvSiqIzf';
 const CHAT_API_URL = 'https://api.void.cat/v1/chat/completions';
