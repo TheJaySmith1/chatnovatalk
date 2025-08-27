@@ -32,9 +32,8 @@ export async function fetchChatCompletion(messages: Message[]): Promise<string> 
     });
 
     const result = await chat.sendMessage({ message: lastMessage.content });
-    // Extract text directly from the response object as per guidelines.
-    const text = result.text;
-    return text || 'Sorry, I could not process that.';
+    // Extract text directly from the response object as per guidelines, providing a fallback.
+    return result.text ?? 'Sorry, I could not process that.';
   } catch (error) {
     console.error('Gemini API Error:', error);
     return 'An error occurred while trying to connect to the AI service.';

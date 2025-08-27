@@ -45,7 +45,7 @@ const CallView: React.FC<Props> = ({ user, onEndCall, getAiResponse, initialMess
   };
 
   const { isListening, startListening, stopListening } = useVoice({ onFinalTranscript: handleFinalTranscript });
-  const { isSpeaking, speak, cancel } = useTextToSpeech({ onEnd: () => {
+  const { speak, cancel } = useTextToSpeech({ onEnd: () => {
     if (isMounted.current) {
         setStatus('user_listening');
     }
