@@ -1,47 +1,43 @@
-// FIX: Import GoogleGenAI from @google/genai.
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Content } from "@google/genai";
 import { Message, Role } from './types';
 
-// FIX: Initialize GoogleGenAI client using API_KEY from environment variables.
 // The API key is sourced from the environment variable `process.env.API_KEY`
 // and is assumed to be available in the execution environment.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
-// FIX: Refactor to use Gemini API for chat completions.
+/**
+ * Generates a chat response from the Gemini API using the entire conversation history.
+ */
 export async function fetchChatCompletion(messages: Message[]): Promise<string> {
-  // Use the recommended model for general text tasks.
   const modelName = 'gemini-2.5-flash';
 
   if (messages.length === 0) {
     return "I'm sorry, there was no message to process.";
   }
 
-  // Gemini requires 'user' and 'model' roles. 'assistant' is mapped to 'model'.
-  // The history is all messages except the last one.
-  const history = messages.slice(0, -1).map(msg => ({
+  // Convert the entire message history to Gemini's format.
+  // 'assistant' role is mapped to 'model'.
+  const contents: Content[] = messages.map(msg => ({
     role: msg.role === Role.USER ? 'user' : 'model',
     parts: [{ text: msg.content }]
   }));
 
-  const lastMessage = messages[messages.length - 1];
-
   try {
-    const chat = ai.chats.create({
-        model: modelName,
-        history: history,
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: contents,
     });
-
-    const result = await chat.sendMessage({ message: lastMessage.content });
-    // Extract text directly from the response object as per guidelines.
-    const text = result.text;
-    return text || 'Sorry, I could not process that.';
+    // Extract text directly from the response object, providing a fallback.
+    return response.text ?? 'Sorry, I could not process that.';
   } catch (error) {
     console.error('Gemini API Error:', error);
     return 'An error occurred while trying to connect to the AI service.';
   }
 }
 
-// FIX: Refactor to use Gemini API for image generation.
+/**
+ * Generates an image from a text prompt using the Gemini API.
+ */
 export async function fetchGeneratedImage(prompt: string): Promise<string> {
   try {
     const response = await ai.models.generateImages({
