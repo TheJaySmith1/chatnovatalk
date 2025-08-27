@@ -9,7 +9,7 @@ const MessageBubble: React.FC<Props> = ({ message }) => {
   const isUser = message.role === Role.USER;
 
   const bubbleClasses = isUser
-    ? 'bg-blue-500/20 backdrop-blur-lg border border-blue-400/30 self-end text-white'
+    ? 'bg-white/20 backdrop-blur-lg border border-white/25 self-end text-white'
     : 'bg-white/10 backdrop-blur-lg border border-white/20 self-start text-white/90';
 
   return (

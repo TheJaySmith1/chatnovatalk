@@ -9,3 +9,8 @@ export interface Message {
   imageUrl?: string;
   id: string;
 }
+
+export interface UserProfile {
+  displayName: string | null;
+  photoURL: string | null;
+}

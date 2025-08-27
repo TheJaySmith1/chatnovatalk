@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, Role } from '../types';
+import { Message, Role, UserProfile } from '../types';
 import { useVoice } from '../hooks/useVoice';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
-import firebase from 'firebase/compat/app';
 
 interface Props {
-  user: firebase.User;
+  user: UserProfile;
   onEndCall: (history: Message[]) => void;
   getAiResponse: (history: Message[]) => Promise<Message>;
   initialMessages: Message[];
@@ -112,7 +111,7 @@ const CallView: React.FC<Props> = ({ user, onEndCall, getAiResponse, initialMess
             <div className="relative w-48 h-48 lg:w-64 lg:h-64 flex items-center justify-center">
                  <div className={`absolute rounded-full bg-blue-500/30 animate-pulse ${status === 'user_listening' ? 'w-full h-full' : 'w-3/4 h-3/4'}`}></div>
                  <div className={`absolute rounded-full bg-blue-500/50 animate-pulse [animation-delay:-0.5s] ${status === 'ai_speaking' ? 'w-5/6 h-5/6' : 'w-1/2 h-1/2'}`}></div>
-                 <img src={user.photoURL || undefined} alt="User Avatar" className="relative w-24 h-24 lg:w-32 lg:h-32 rounded-full shadow-2xl" />
+                 <img src={user.photoURL || undefined} alt="User Avatar" className="relative w-24 h-24 lg:w-32 lg:h-32 rounded-full shadow-2xl bg-white/20" />
                  {status === 'processing' && (
                      <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-28 h-28 lg:w-36 lg:h-36 border-t-4 border-white/50 rounded-full animate-spin"></div>

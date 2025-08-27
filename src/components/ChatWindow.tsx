@@ -25,8 +25,8 @@ const ChatWindow: React.FC<Props> = ({ messages, isLoading }) => {
         <MessageBubble key={msg.id} message={msg} />
       ))}
       {isLoading && (
-         <div className="flex justify-start">
-            <div className="bg-white/10 backdrop-blur-lg border border-white/20 self-start text-white/90 p-1 rounded-2xl shadow-md">
+         <div className="flex w-full justify-start">
+            <div className="max-w-lg lg:max-w-xl p-4 rounded-2xl shadow-md my-2 flex items-center bg-white/10 backdrop-blur-lg border border-white/20 self-start text-white/90">
               <LoadingIndicator />
             </div>
          </div>

@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Message, Role } from './types';
+import { Message, Role, UserProfile } from './types';
 import { fetchChatCompletion, fetchGeneratedImage } from './api';
 import { useVoice } from './hooks/useVoice';
-import { useAuth } from './hooks/useAuth';
-import { db } from './firebase';
-// FIX: Use Firebase v8 compat API for Firestore to match the rest of the app.
-import firebase from 'firebase/compat/app';
 
 import Header from './components/Header';
 import ChatWindow from './components/ChatWindow';
 import InputBar from './components/InputBar';
 import CallView from './components/CallView';
 
+const LOCAL_STORAGE_KEY = 'novatalk_messages';
+
+const mockUser: UserProfile = {
+  displayName: 'You',
+  photoURL: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiPjxwYXRoIGQ9Ik0xMiAxMmMyLjIxIDAgNC0xLjc5IDQtNHMtMS43OS00LTQtNC00IDEuNzktNCA0IDEuNzkgNCA0IDR6bTAgMmMtMi42NyAwLTggMS4zNC04IDR2MmwxNnYtMmMwLTIuNjYtNS4zMy00LTgtNHoiLz48L3N2Zz4=',
+};
+
 const App: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -22,44 +24,43 @@ const App: React.FC = () => {
   const { isListening, startListening, stopListening } = useVoice({ onInterimTranscript: setTranscript });
 
   useEffect(() => {
-    if (authLoading) return; // Wait for auth state to be determined
-
-    if (user) {
-      // User is logged in, fetch their chat history
-      const fetchMessages = async () => {
-        setIsLoading(true);
-        // FIX: Use v8 compat syntax for Firestore document reference and retrieval.
-        const chatDocRef = db.collection('chats').doc(user.uid);
-        const chatDoc = await chatDocRef.get();
-        if (chatDoc.exists) {
-          setMessages(chatDoc.data()?.messages || []);
-        } else {
-          // New user, set initial message
-          const initialMessage = {
-            id: crypto.randomUUID(),
-            role: Role.ASSISTANT,
-            content: "Hello! I'm NovaTalk. You can chat with me or request an image. Try 'generate an image of a futuristic city'.",
-          };
-          setMessages([initialMessage]);
-        }
-        setIsLoading(false);
-      };
-      fetchMessages();
-    } else {
-      // User is logged out, show sign-in prompt
-      setMessages([
-        {
+    // Load messages from local storage on initial render
+    try {
+      const storedMessages = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (storedMessages) {
+        setMessages(JSON.parse(storedMessages));
+      } else {
+        // New user, set initial message
+        const initialMessage = {
           id: crypto.randomUUID(),
           role: Role.ASSISTANT,
-          content: 'Please sign in to start chatting and save your conversation.',
-        },
-      ]);
+          content: "Hello! I'm NovaTalk. You can chat with me or request an image. Try 'generate an image of a futuristic city'.",
+        };
+        setMessages([initialMessage]);
+      }
+    } catch (error) {
+      console.error("Failed to load messages from local storage", error);
+       const errorMessage = {
+        id: crypto.randomUUID(),
+        role: Role.ASSISTANT,
+        content: "Hello! I couldn't load your previous session, but we can start a new one!",
+      };
+      setMessages([errorMessage]);
     }
-  }, [user, authLoading]);
+  }, []);
+
+  const saveMessages = (updatedMessages: Message[]) => {
+      setMessages(updatedMessages);
+      try {
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedMessages));
+      } catch (error) {
+          console.error("Failed to save messages to local storage", error);
+      }
+  };
 
   const handleSendMessage = async (content: string, messageHistory: Message[] = messages): Promise<Message> => {
-    if (isLoading || !user) {
-        throw new Error("Cannot send message, user not logged in or app is busy.");
+    if (isLoading) {
+        throw new Error("Cannot send message, app is busy.");
     };
 
     const userMessage: Message = { id: crypto.randomUUID(), role: Role.USER, content };
@@ -92,12 +93,7 @@ const App: React.FC = () => {
       }
       
       const finalMessages = [...updatedMessages, assistantMessage];
-      setMessages(finalMessages);
-      
-      // Save to Firestore
-      // FIX: Use v8 compat syntax for setting document data.
-      const chatDocRef = db.collection('chats').doc(user.uid);
-      await chatDocRef.set({ messages: finalMessages, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      saveMessages(finalMessages);
 
       return assistantMessage;
 
@@ -108,7 +104,8 @@ const App: React.FC = () => {
         role: Role.ASSISTANT,
         content: "I'm sorry, I encountered an error. Please try again.",
       };
-      setMessages(prev => [...prev, errorMessage]);
+      // Use the saveMessages function to correctly update state and local storage
+      saveMessages([...updatedMessages, errorMessage]);
       throw error;
     } finally {
       setIsLoading(false);
@@ -116,48 +113,34 @@ const App: React.FC = () => {
   };
   
   const handleStartCall = () => {
-    if (user) {
-      setIsCallActive(true);
-    }
+    setIsCallActive(true);
   };
 
   const handleEndCall = async (callHistory: Message[]) => {
      setIsCallActive(false);
-     if (user && callHistory.length > 1) { // Only save if there's more than the initial greeting
+     if (callHistory.length > 1) { // Only save if there's more than the initial greeting
         const finalMessages = [...messages, ...callHistory.slice(1)]; // Exclude initial greeting from AI
-        setMessages(finalMessages);
-        // FIX: Use v8 compat syntax for setting document data.
-        const chatDocRef = db.collection('chats').doc(user.uid);
-        await chatDocRef.set({ messages: finalMessages, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        saveMessages(finalMessages);
      }
   };
 
-  if (authLoading) {
-    return (
-       <div className="min-h-screen w-screen flex items-center justify-center font-sans text-white">
-          <LoadingIndicator />
-       </div>
-    );
-  }
-
   return (
     <div className="min-h-screen w-screen flex flex-col font-sans text-white">
-      <Header user={user} />
+      <Header />
       <main className="flex-1 flex flex-col pt-24 pb-4 w-full max-w-4xl mx-auto">
-        <ChatWindow messages={messages} isLoading={isLoading && !!user} />
+        <ChatWindow messages={messages} isLoading={isLoading} />
         <InputBar 
           onSendMessage={handleSendMessage}
           isListening={isListening}
           startListening={startListening}
           stopListening={stopListening}
           transcript={transcript}
-          disabled={!user}
           onStartCall={handleStartCall}
         />
       </main>
-      {isCallActive && user && (
+      {isCallActive && (
         <CallView 
-          user={user} 
+          user={mockUser} 
           onEndCall={handleEndCall}
           getAiResponse={async (history) => {
              const aiResponse = await fetchChatCompletion(history);
@@ -173,15 +156,5 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-// Simple loading indicator for the auth check
-const LoadingIndicator: React.FC = () => (
-  <div className="flex items-center space-x-2 p-4">
-    <div className="w-4 h-4 bg-white/50 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-    <div className="w-4 h-4 bg-white/50 rounded-full animate-pulse [animation-delay:-0.15s]"></div>
-    <div className="w-4 h-4 bg-white/50 rounded-full animate-pulse"></div>
-  </div>
-);
-
 
 export default App;

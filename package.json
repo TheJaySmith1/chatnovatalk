@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@google/genai": "^1.15.0",
-    "firebase": "^10.12.4",
     "react": "^19.1.1-beta-f527752a1-20240723",
     "react-dom": "^19.1.1-beta-f527752a1-20240723"
   },
