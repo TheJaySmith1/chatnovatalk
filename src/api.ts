@@ -50,12 +50,14 @@ export async function fetchGeneratedImage(prompt: string): Promise<string> {
         },
     });
 
-    if (response.generatedImages && response.generatedImages.length > 0) {
-        const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
+    // Safely access the image data using optional chaining to prevent build errors.
+    const base64ImageBytes = response.generatedImages?.[0]?.image?.imageBytes;
+
+    if (base64ImageBytes) {
         return `data:image/jpeg;base64,${base64ImageBytes}`;
     } else {
         // This case might occur if the generation is blocked or returns no images.
-        throw new Error('No image was generated.');
+        throw new Error('No image was generated or image data is missing.');
     }
   } catch (error) {
     console.error('Gemini Image Generation Error:', error);

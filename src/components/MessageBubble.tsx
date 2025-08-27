@@ -1,5 +1,6 @@
 import React from 'react';
-import { Message, Role } from '../types';
+// FIX: Use inline `type` modifier for `Message` as it is a type-only import.
+import { type Message, Role } from '../types';
 
 interface Props {
   message: Message;

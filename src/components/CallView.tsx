@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, Role, UserProfile } from '../types';
+// FIX: Use inline `type` modifier for type-only imports (`Message`, `UserProfile`).
+import { type Message, Role, type UserProfile } from '../types';
 import { useVoice } from '../hooks/useVoice';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 

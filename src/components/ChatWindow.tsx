@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Message } from '../types';
+// FIX: Use `import type` because `Message` is only used as a type annotation.
+import type { Message } from '../types';
 import MessageBubble from './MessageBubble';
 import LoadingIndicator from './LoadingIndicator';
 
